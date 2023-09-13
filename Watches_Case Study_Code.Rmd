@@ -1,0 +1,1527 @@
+---
+title: "Watches Case Study"
+Authors: "Simone Di Lorenzo"
+Date: February 28th 2023
+output:
+  word_document: default
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+```{r setup, include=TRUE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Authors: 
+
+Simone Di Lorenzo 889833
+
+# EXPLORATIVE RESEARCH ON SECONDARY SOURCES
+
+The traditional watch market in the UK has experienced growth in recent years and is projected to reach £1.7 billion by 2022, according to Mintel (English market research firm). The trend has been towards higher-end luxury watches, with Rolex, Omega, and Patek Philippe leading the way. However, mid-range and affordable watches such as Casio, Timex, and Seiko are also gaining popularity among consumers.
+
+
+A Deloitte study has shown that consumers in the United Kingdom are increasingly considering luxury watches as investments rather than just fashion accessories. Personalised experiences are also becoming more important to buyers, with bespoke or custom-made watches being sought after. The traditional watch market in the UK is highly competitive, with established and emerging brands vying for market share. To remain competitive, traditional watch companies are integrating smart features into their products. Smartwatch manufacturers such as Apple, Samsung, and Fitbit accounted for three of the top five watch brands in the world by volume last year.
+
+
+Sustainability and ethical sourcing are also important considerations for consumers, with a growing demand for watches made from sustainable and ethical materials. In order to meet these demands, traditional watch companies are also shifting their focus towards sustainability and ethical practices. Overall, the UK's traditional watch market remains a dynamic and competitive industry, with luxury, personalization, and sustainability being key drivers of growth.
+
+### Smart Watch Buyer Profile
+
+- AGE	>20
+
+- GENDER	63% male
+
+- INCOME	> $150k
+
+-EDUCATION	College degree or advanced degree
+
+### Mechanical Watch Buyer Profile
+
+- AGE	>25
+
+- GENDER	60% male
+
+- INCOME	> $75k
+
+- EDUCATION	College degree or advanced degree
+
+### Quartz Watch Buyer Profile
+
+- AGE	>20
+
+- GENDER	60% male
+
+- INCOME	> $80k
+
+- EDUCATION	Varying levels
+
+# BACKGROUND
+The primary goal of the study is to determine which characteristics and attributes influence traditional watches' perceptions, as well as smart watches' perceptions. To concentrate on the potential market for traditional watches, we need to first establish whether these two types of watches are actually competitors on the same market. Furthermore, we should attempt to highlight similarities and differences in terms of socio-demographic characteristics and lifestyle among consumers of various types of watches.
+
+### TRADWATCH
+TradWatch has been manufacturing mechanical watches since the beginning of the 20th century, and quartz watches since the 1970s, and has sold them worldwide. With the spreading of smart watches, whose market share has already exceeded that of the other types of watches, TradWatch managers want to investigate if there is still room for "old-style" watches and if there is competition between old-style and smart watches, and/or mechanical and quartz watches.To learn more about the matter, TradWatch executives decide to conduct a market research, focusing specifically on mechanical and quartz watch enthusiasts, with smart watch users constituting the smallest portion of the sample.
+
+
+### SAMPLING DESCRIPTION
+The group was gathered from the members of a watch forum. The survey was administered online and collected 237 responses. The forum and the research both refer to the United Kingdom. The questionnaire was composed of 16 questions, mainly divided into a first section about watches, a second section about socio-demographic characteristics, and a question about how respondents came in possession of their watches (to determine whether inheritance/gift is still an option as a marketing trigger) and another question about willingness to buy, to account for any remaining market share.
+
+```{r, echo=FALSE}
+#package to install
+
+#install.packages("dplyr")
+#install.packages("plyr")
+#install.packages("RColorBrewer")
+```
+
+# DATA CLEANING
+We start by importing the dataset. 
+```{r}
+#reading the dataset
+Watches <- read.delim("Watches.txt", row.names=1) # row.names=1 argument import the first column (IDs) as row names.
+```
+Then, we remove the respondent with more than 90 NAs
+```{r}
+#we create a vector of zeros of length equal to the length of our dataset 
+n.na<-rep(0,nrow(Watches))
+#for each row we sum the numbers of NAs and record it in the vector
+for (i in 1:nrow(Watches)){
+n.na[i]<-sum(is.na(Watches[i,])==T)
+}
+#We remove respondent with 90 or more NAs
+watches<-Watches[n.na<=90,]
+```
+
+# Question 1: Which attributes impact the most on the perceptions of the three products?
+To address this question, we created  a new dataframe containing only the data useful (Q4: variables V8 to V40) to answer the first research question. 
+```{r}
+#We create a subset of the dataset with only the column we are interested in
+df <-watches[,8:64]
+#we select the question to be used as dependent (Y)
+per <- df[,1:33]
+#replace NA values with the median which is 4 (scale 1 to 7)
+scale <-c(1:7)
+per[is.na(per)] <- median(scale)
+#we select the independent variables
+char <- df[,34:57]
+#and we substitute the NA with the median (scale 1 to 7)
+char[is.na(char)] <- median(scale)
+```
+To better understand which attributes impact consumers the most, we divided the dataset based on the type of watch in mechanichal, quartz and smartwatch. 
+```{r}
+#importing dplyr that will be used to select column containing a specific string
+library('dplyr', warn.conflicts = FALSE)
+
+#We divide our perception dataset in three different dataset for each type of watch we will analyze
+per.MW <- per %>% select(contains('_MW'))
+per.QW <- per %>% select(contains('_QW'))
+per.SW <- per %>% select(contains('_SW'))
+
+char.MW <- char %>% select(contains('_MW'))
+char.QW <- char %>% select(contains('_QW'))
+char.SW <- char %>% select(contains('_SW'))
+```
+Since Superfluous has commonly a negative connotation, we constructed a correlation matrix to verify this assumption. 
+```{r}
+#Building the correlations matrix
+
+#mechanical 
+corr.MW<-round(cor(per.MW),3)
+corr.MW
+#quartz watch
+corr.QW<-round(cor(per.QW),3)
+corr.QW
+
+#smart watch
+corr.SW<-round(cor(per.SW),3)
+corr.SW
+```
+As can see, "superfluous" negatively correlate with other variables relative only to Quartz Watches and Smartwatches. Consequently, we invert the value of the variable "superfluous" in quartz watches and smartwatches.
+```{r, echo=FALSE, results='hide'}
+#inverting values for superfluous and rebuild the correlation matrix
+
+#quartz watch
+per.QW[,7]<- 8-per.QW[,7]
+
+corr.QW<-round(cor(per.QW),3)
+corr.QW
+
+#smart watch
+per.SW[,7]<- 8-per.SW[,7]
+
+corr.SW<-round(cor(per.SW),3)
+corr.SW
+```
+
+In order to visually understand which attributes are the most valued among consumers, we plotted three heatmaps for each category of watches using the answers to question 5 in the questionnaire (Q5: V41-V64). \\
+The Heatmap is a graphical representation to understand which attributes are the most valued among consumers. Furthermore, the colors of the cells change in response to the respondents' responses, thus the darker the cell, the more frequently it has been responded.
+```{r, echo=FALSE, warning=FALSE}
+#vector used for naming the charts
+names <- c("Mechanical", "Quartz", "Smart")
+
+#importing  the library to build our heat map
+library(RColorBrewer)
+#we build 3 heat map one for each type of watch
+for (i in 1:3) {
+design<-table(char[,0+i])
+reliability<-table(char[,3+i])
+functionality<-table(char[,6+i])
+readability<-table(char[,9+i])
+impermeability<-table(char[,12+i])
+brand<-table(char[,15+i])
+material<-table(char[,18+i])
+price<-table(char[,21+i])
+orologio<-cbind(design,reliability, functionality,readability,impermeability,brand,material,price)
+heatmap(orologio, Rowv = NA, Colv = NA,  main = paste(names[i],"Watches"), col = colorRampPalette(brewer.pal(8,"Blues"))(7))
+}
+```
+Given that 1 corresponds to extremely unimportant characteristic and 7 to extremely important characteristic, we can state that: 
+
+- For Mechanical Watches: the most valued attributes are design and reliability; 
+
+- For Quartz Watches: the most valued attributes are reliability and readability;
+
+- For Smartwatches: the most valued attribute are reliability and functionality.
+
+We may conclude that reliability is the most valued feature among traditional, which includes mechanical and quartz timepieces, and smartwatch customers.
+
+### To have a bigger picture on which characteristics impact more consumers' perception, we employ a Multiple Regression model.
+
+We created a variable for each type of watches called "pervar", formed with responses to question 4 (V8-V40), in susch a way that a higher score implies a better perception. 
+
+#### Mechanical Watches
+
+```{r}
+#we first build our perception index
+
+#mechanical watches
+pervar.MW <- rowSums(per.MW) 
+
+# building our multiple regression model
+attach(char.MW, warn.conflicts = F)
+ff.MW <-pervar.MW ~ imp_design_MW+imp_reliab_MW+imp_funct_MW+imp_read_MW+imp_imperm_MW+imp_brand_MW+imp_mater_MW+imp_price_MW
+
+summary(lm(ff.MW))
+
+```
+Interpretation of the output for MW:
+
+- Looking at the adjusted $R^2$, we can affirm that the model explains 35 percent of the variability in the pervar index, and this is significantly different from zero because our p-value is very close to zero (4.542e-15). 
+
+- Reliability, readability, impermeability, material and price do not have a significant impact on the pervar index when including the other variables (pvalue larger than 10%). 
+
+Although reliability was one of the most valued characteristic among Mechanical watches' buyers, it does not affect consumers' perception. 
+
+
+Considering we found many variables do not have impact on the perception, we decided to remove them.  
+```{r}
+#mechanical watches
+attach(char.MW, warn.conflicts = F)
+ff.MW <-pervar.MW ~ imp_design_MW+imp_funct_MW+imp_brand_MW
+
+res.MW<-lm(ff.MW)
+
+summary(res.MW)
+
+```
+Interpretation of the output for MW:
+
+- We can see that R-squared is slightly increased improving our model and the p-value is still significantly close to zero.
+
+- Design, functionality and brand have a significant impact on the pervar index. For the design, each point increased on the likert scale (e.g.,from 1 to 2) leads to an increase of 2.01 points on the perception of mechanical watches. For the functionality the increase on the perception is 2.11, while for the brand is 2.15. 
+
+#### Quartz Watches
+
+```{r}
+#quartz watches
+pervar.QW <- rowSums(per.QW)
+
+# building our multiple regression model
+attach(char.QW, warn.conflicts = F)
+ff.QW <-pervar.QW ~ imp_design_QW+imp_reliab_QW+imp_funct_QW+imp_read_QW+imp_imperm_QW+imp_brand_QW+imp_mater_QW+imp_price_QW
+
+summary(lm(ff.QW))
+```
+Interpretation of the output for QW:
+
+- Looking at the adjusted $R^2$, we can affirm that the model explains 28 percent of the variability in the pervar index, and this is significantly different from zero because our p-value is very close to zero (1.286e-11).
+
+- Variables that do not have a significant impact on the pervar index, are the same we mentioned for Mechanical Watches, apart from material that in this case has an impact.  
+
+Also here, although reliability and readability were the most valued characteristics among quartz watches' buyers, it does not affect consumers' perception.
+
+
+We decided to remove variables that do not have impact on the perception also for Quartz watches.
+```{r}
+attach(char.QW, warn.conflicts = F)
+ff.QW <-pervar.QW ~ imp_design_QW+imp_funct_QW+imp_brand_QW+imp_mater_QW
+res.QW<-lm(ff.QW)
+
+summary(res.QW)
+```
+Interpretation of the output for QW:
+
+- Design, functionality and brand have a significant impact on the pervar index. For the design, each point increased on the likert scale (e.g.,from 1 to 2) leads to an increase of 1.53 points on the perception of mechanical watches. For the functionality the increase on the perception is 0.93, while for the brand is 2.03. 
+
+- Since material already had a high level of significance (0.05), now we cannot consider it anymore to have an impact on the perception. 
+
+#### Smartwatches
+
+```{r}
+#smart watches
+pervar.SW <- rowSums(per.SW)
+
+# building our multiple regression model
+attach(char.SW, warn.conflicts = F)
+ff.SW <-pervar.SW ~ imp_design_SW+imp_reliab_SW+imp_funct_SW+imp_read_SW+imp_imperm_SW+imp_brand_SW+imp_mater_SW+imp_price_SW
+
+summary(lm(ff.SW))
+
+```
+Intrepretation of the output for SW:
+
+- Looking at the adjusted $R^2$, we can affirm that the model explains 21 percent of the variability in the pervar index, and this is significantly different from zero because our p-value close to zero (3.789e-08).
+ 
+- None of the variables have a significant impact on the pervar index besides design and brand. 
+
+Also here, although reliability and functionality were the most valued characteristics among Smartwatches watches' buyers, it does not affect consumers' perception. 
+```{r}
+
+#smart watches
+attach(char.SW, warn.conflicts = F)
+ff.SW <-pervar.SW ~ imp_design_SW+imp_brand_SW
+res.SW<-lm(ff.SW)
+
+summary(res.SW)
+```
+Interpretation of the output for SW:
+
+- Design and brand have a significant impact on the pervar index. For the design, each point increased on the likert scale (e.g.,from 1 to 2) leads to an increase of 1.33 points on the perception of mechanical watches, while for the brand the increase is 2.13.
+
+## Diagnostic Check
+
+Right after the interpretation of the model's output, we have to verify the residuals to ensure they are consistent with the model's hypotheses.
+
+#### Mechanical watches
+
+```{r fig.width=6, fig.height=8, echo=FALSE}
+par(mfrow=c(3,1))
+
+#residual analysis
+plot(res.MW,1, )
+plot(density(res.MW$residuals))
+curve(dnorm(x,mean=mean(res.MW$residuals), sd=sd(res.MW$residuals)), add=T,col=2)
+#fitted values versus observed value
+plot(res.MW$fitted.values,pervar.MW)
+#plot the bisector
+abline(0,1)
+
+```
+
+**Kolmogorov smirnov test for normality**
+
+```{r,echo=FALSE, warning=FALSE}
+#kolmogorov smirnov test
+#mechanical
+ks.test((res.MW$residuals-mean(res.MW$residuals))/sd(res.MW$residuals),"pnorm")
+```
+The analysis of residual points out that the residuals have a constant variance, meaning that they are homoscedastic. From the second plot, the distribution seems to be Normally distributed. We confirmed it through the KS test. The fitted and predicted value goes quite well together as most are close to the bisector. 
+
+**Removing outliers**
+
+```{r}
+#mechanical watch
+#creating a vector containing the outliers values
+outliersMW<-c(25,68,233)
+
+#removing outliers
+pervar.MW1<-pervar.MW[-outliersMW]
+
+design <- char.MW$imp_design_MW[-outliersMW]
+funct <- char.MW$imp_funct_MW[-outliersMW]
+brand <- char.MW$imp_brand_MW[-outliersMW]
+
+#multiple regression model without outliers
+ff.MW <-pervar.MW1 ~ design+funct+brand
+noout.model.MW<-lm(ff.MW)
+
+#summary(noout.model.MW)
+
+#kolmogorov smirnov test
+
+ks.test((noout.model.MW$residuals-mean(noout.model.MW$residuals))/sd(noout.model.MW$residuals),"pnorm")
+```
+
+#### Quartz watches
+
+```{r fig.width=6 , fig.height=8, echo=FALSE}
+par(mfrow=c(3,1))
+#residual vs fitted
+plot(res.QW,1, )
+#test for normality
+plot(density(res.QW$residuals))
+curve(dnorm(x,mean=mean(res.QW$residuals), sd=sd(res.QW$residuals)), add=T,col=2)
+#fitted value
+plot(res.QW$fitted.values,pervar.QW)
+abline(0,1)
+
+```
+**Kolmogorov smirnov test for normality**
+
+```{r, echo=FALSE, warning=FALSE}
+#kolmogorov smirnov test
+ks.test((res.QW$residuals-mean(res.QW$residuals))/sd(res.QW$residuals),"pnorm")
+```
+Also for Quartz watches residuals are homoscedastic, normally distributed and the fitted and predicted value goes well together as most are close to the bisector. 
+
+**Removing outliers**
+
+```{r}
+#quartz watch
+#creating a vector containing the outliers values
+outliersQW<-c(33,164,169)
+
+#removing outliers
+pervar.QW1<-pervar.QW[-outliersQW]
+
+design <- char.QW$imp_design_QW[-outliersQW]
+funct <- char.QW$imp_funct_QW[-outliersQW]
+brand <- char.QW$imp_brand_QW[-outliersQW]
+material <- char.QW$imp_mater_QW[-outliersQW]
+
+#multiple regression model without outliers
+ff.QW <-pervar.QW1 ~ design+funct+brand+material
+noout.model.QW<-lm(ff.QW)
+
+summary(noout.model.QW)
+
+#kolmogorov smirnov test
+ks.test((noout.model.QW$residuals-mean(noout.model.QW$residuals))/sd(noout.model.QW$residuals),"pnorm")
+```
+Differently from Mechanical watches, our model slightly improved after removing the outliers. The R-squared and p-value of KS test increased. 
+
+#### Smartwatch
+
+```{r fig.width=6, fig.height=8, echo=FALSE}
+par(mfrow=c(3,1))
+#residual vs fitted
+plot(res.SW,1, )
+#test for normality
+plot(density(res.SW$residuals))
+curve(dnorm(x,mean=mean(res.SW$residuals), sd=sd(res.SW$residuals)), add=T,col=2)
+#fitted value
+plot(res.SW$fitted.values,pervar.SW)
+abline(0,1)
+```
+
+**Kolmogorov smirnov test for normality**
+
+```{r, echo=FALSE, warning=FALSE}
+#kolmogorov smirnov test 
+ks.test((res.SW$residuals-mean(res.SW$residuals))/sd(res.SW$residuals),"pnorm")
+```
+Also for Smartwatches residuals are homoscedastic, normally distributed and the fitted and predicted value goes quite well together as most are close to the bisector. 
+ 
+**removing outliers** 
+
+```{r}
+#smart watch
+#creating a vector containing the outliers values
+outliersSW<-c(184,185,21)
+#removing outliers
+pervar.SW1<-pervar.SW[-outliersSW]
+
+design <- char.SW$imp_design_SW[-outliersSW]
+brand <- char.SW$imp_brand_SW[-outliersSW]
+
+#multiple regression model without outliers
+ff.SW <-pervar.SW1 ~ design+brand
+noout.model.SW<-lm(ff.SW)
+
+#summary(noout.model.SW)
+
+#kolmogorov smirnov test
+ks.test((noout.model.SW$residuals-mean(noout.model.SW$residuals))/sd(noout.model.SW$residuals),"pnorm")
+```
+By removing outliers, the model didn't significantly changed. 
+
+After our diagnostic check resulted in a positive outcome we can use the multiple regression models to draw our conclusions. 
+
+## Conclusion of the multiple regression
+
+To conclude, we found different characteristics of watches that have an impact on the customers' perception of traditional watches and smartwatches that the company can focus on in order to its products perception. For both categories of watches, design and brand have a positive impact on the perception of customers on watches. More specifically, we found that among traditional watches, functionality and materials also play a crucial role. The company may use this findings to further investigate on which kind of materials and functionality are more preferred by its customer. TradWatch may also improve their designs and branding to increase the perception of its products.
+
+# Question 2: Are they all separate or some of them can be somewhat reduced to common factors?
+
+To address this question, we carried out a factor analysis. First of all, we need to evaluate if there is any correlation worth exploring among the variables through the KMO and Bartlett tests.
+```{r, echo=FALSE}
+
+#import library psych to measure the KMO index and perform the Barlett test of sphericity
+library(psych)
+
+#mechanical watch
+fact.MW<- char.MW
+KMO(fact.MW)
+cortest.bartlett(fact.MW)
+
+# quartz watch
+fact.QW <- char.QW
+KMO(fact.QW)
+cortest.bartlett(fact.QW)
+
+# smartwatch
+fact.SW <- char.SW
+KMO(fact.SW)
+cortest.bartlett(fact.SW)
+```
+We can proceed with the factorial analysis, since:
+
+
+**Mechanical Watches**
+
+1.	the overall MSA of the KMO index is 0.81
+
+2.  the Chi-square test for sphericity of the correlation matrix rejects the hypothesis of our matrix being equal to the identity matrix with a pvalue close to zero, 1.452741e-47.
+
+**Quartz Watches**
+
+1.	the overall MSA of the KMO index is 0.81
+
+2.  the Chi-square test for sphericity of the correlation matrix rejects the hypothesis of our matrix being equal to the identity matrix with a pvalue close to zero,  3.31608e-60.
+
+**Smart Watches**
+
+1.	the overall MSA of the KMO index is 0.85
+
+2.  the Chi-square test for sphericity of the correlation matrix rejects the hypothesis of our matrix being equal to the identity matrix with a pvalue close to zero, 1.448051e-109.
+
+
+We start with 4 factors which is the maximum allowed for 8 variables by R
+
+### Mechanical Watches
+
+```{r}
+#performing the factor analysis
+#mechanical watch
+anfatt.MW<-factanal(fact.MW,4)
+anfatt.MW
+```
+Looking at the loadings , we see that the Factor4 does no explain more variance than each of the original variables (because it is smaller than 1). So, we constructed a Scree Plot to choose the optimal number of factors
+```{r}
+#mechanical watches
+plot(seq(1:4),colSums(anfatt.MW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for mechanical watches")
+lines(seq(1:4),colSums(anfatt.MW$loadings^2))
+abline(h=1,lty=2)
+```
+From the scree plot we select 3 factors.
+```{r}
+#mechanical watch
+anfatt.MW<-factanal(fact.MW,3, rotation="varimax", scores="regression")
+anfatt.MW
+```
+As we can see, SS Loadings are all larger than 1, almost 50% of the variance is explained by the three factors and the p-value is larger than 5% (it is 89%). So we can accept the solution and go ahead with naming and interpreting the factors.
+
+#### Naming and interpretations of factors
+
+**Mechanical Watches**
+
+- Factor1: **Quality**: design + functionality + brand + material + price
+
+- Factor2: **Adaptability**: readability + impermeability
+
+- Factor3: **reliability**: reliability
+
+```{r}
+#naming the factors
+
+#Mechanical
+fact.scoresMW<-anfatt.MW$scores
+colnames(fact.scoresMW)<-c("Quality","Adaptability", "Reliability")
+cor(fact.scoresMW)
+```
+
+### Quartz Watches
+
+```{r}
+#performing the factor analysis
+#quartz watch
+anfatt.QW<-factanal(fact.QW,4)
+anfatt.QW
+```
+
+Looking at the loadings , we see that the Factor3 and Factor4 do no explain more variance than each of the original variables (because it is smaller than 1). 
+So, we constructed a Scree Plot to choose the optimal number of factors.
+
+```{r, echo=FALSE}
+#test for the number of factors with the scree plot
+#quartz watches
+plot(seq(1:4),colSums(anfatt.QW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for quartz watches")
+lines(seq(1:4),colSums(anfatt.QW$loadings^2))
+abline(h=1,lty=2)
+```
+
+From the scree plot we select 2 factors.
+
+```{r}
+#we redo the factor analysis with the correct number of factors
+
+#quartz watch
+anfatt.QW<-factanal(fact.QW,2, rotation="varimax", scores="regression")
+anfatt.QW
+```
+
+As we can see, SS Loadings are all larger than 1, round 46% of the variance is explained by the two factors and the p-value is larger than 5% (it is 42%). So we can accept the solution and go ahead with naming and interpreting the factors.
+
+```{r}
+#Quartz
+fact.scoresQW<-anfatt.QW$scores
+colnames(fact.scoresQW)<-c("Performance","Craftsmanship")
+cor(fact.scoresQW)
+```
+
+#### Naming and interpretations of factors
+
+**Quartz Watches**
+
+-Factor1: **Performance**: design + reliability + readability + impermeability + price
+
+-Factor2: **Craftsmanship**: brand + material 
+
+
+### Smartwatches
+
+```{r}
+#performing the factor analysis
+#smartwatch
+anfatt.SW<-factanal(fact.SW,4)
+anfatt.SW
+```
+Looking at the loadings , we see that the Factor3 and Factor4 do no explain more variance than each of the original variables (because it is smaller than 1). 
+So, we constructed a Scree Plot to choose the optimal number of factors.
+```{r,echo=FALSE}
+
+#test for the number of factors with the scree plot
+
+#smart watch
+plot(seq(1:4),colSums(anfatt.SW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for smart watches")
+lines(seq(1:4),colSums(anfatt.SW$loadings^2))
+abline(h=1,lty=2)
+
+```
+From the scree plot we select 3 factors.
+```{r}
+#we redo the factor analysis with the correct number of factors
+
+#smartwatch
+anfatt.SW<-factanal(fact.SW,3, rotation="varimax", scores="regression")
+anfatt.SW
+```
+
+In this case we can accept the solution, as the SS Loadings are all larger than 1, around 57% of the variance is explained by the three factors and the p-value is larger than 5% (it is 97%). 
+
+```{r}
+#naming the factors
+
+#SmartWatches
+fact.scoresSW<-anfatt.SW$scores
+colnames(fact.scoresSW)<-c("Usability","Craftsmanship", "Value")
+cor(fact.scoresSW)
+```
+
+**smartwatches**
+
+- Factor1 **Usability**: design + reliability + functionality + readability
+
+- Factor2 **Craftsmanship**: brand + material
+
+- Factor3 **Value** : impermeability + price
+
+## Conclusion of the factor analysis
+
+To sum up, we can conclude that the characteristics of the watches can be reduced to common factors. By using these factors, TradWatch can conduct a marketing research in a easier and efficient way. Factors, since they include different characteristics, can be used by the company to develop question that are easy and quicker to answer, in order to achieve an higher rate of response without losing any meaningful informations. 
+
+# Qustion 5: Can we segment the market according to the underlying factors?
+
+To investigate this issue, we applied the cluster analysis algorithm to the factors we identified and then characterize the clusters based on socio-demographic variables useful in market segmentation.
+
+
+First of all, we calculated the distance matrix.
+```{r}
+#computing the distance matrix 
+
+#mechanical watches
+d.MW<- dist(fact.scoresMW,method="euclidean") 
+#quartz watches
+d.QW<- dist(fact.scoresQW,method="euclidean")
+#smart watches
+d.SW<- dist(fact.scoresSW,method="euclidean")
+```
+
+Then, we agglomerated objects using the Ward Linkage agglomeration method.
+```{r}
+#mechanical
+clu.MW<-hclust(d.MW,method="ward.D")
+#quartz
+clu.QW<-hclust(d.QW,method="ward.D")
+#smartwatch
+clu.SW<-hclust(d.SW,method="ward.D")
+```
+
+```{r, echo=FALSE}
+#plotting the dendograms
+
+#mechanical
+plot(clu.MW, xlab="",ylab="", hang = -1, cex=0.6, main="Mechanical")
+#quartz
+plot(clu.QW, xlab="",ylab="", hang = -1, cex=0.6, main="Quartz")
+#smartwatch
+plot(clu.SW, xlab="",ylab="", hang = -1, cex=0.6, main="Smartwatches")
+```
+
+**Mechanical watches** 
+Looking at the distance of agglomeration and at the homogeneity of clusters, it seems that a three cluster solution is the more indicated. 
+
+
+**Quartz watches**
+The graph shows three large dendrogram branches, indicating that the three groups are well separated.
+
+
+**Smartwatches**
+Based on the agglomeration distance and cluster homogeneity, a five-cluster approach appears to be the most appropriate. 
+
+
+We used the "rect.hclust" function to point out the clusters:
+```{r, echo=FALSE}
+plot(clu.MW, xlab="",ylab="", hang = -1, cex=0.6)
+membMW <- rect.hclust(clu.MW,k=3, which = c(1,2,3), border = 1:3)
+
+plot(clu.QW, xlab="",ylab="", hang = -1, cex=0.6)
+membQW <- rect.hclust(clu.QW,k=3, which = c(1,2,3), border = 1:3)
+
+plot(clu.SW, xlab="",ylab="", hang = -1, cex=0.6)
+membSW <- rect.hclust(clu.SW,k=5, which = c(1,2,3,4,5), border = 1:5)
+```
+
+To validate the number of clusters, we computed the $R^2$ index, which compares the deviance between clusters to the total deviance.
+
+```{r}
+#importing two functions we will use below
+source("pseudo_F.R")
+source("nclusters.R")
+
+# computing R-squared index 
+#mechanical watches
+pseudo_F.R(fact.scoresMW, clu.MW, 10)
+#quartz watches
+pseudo_F.R(fact.scoresQW, clu.QW, 8)
+#smartwatches
+pseudo_F.R(fact.scoresSW, clu.SW, 8)
+
+```
+
+Based on the R-squared index we confirmed:
+
+- 3 cluster for Mechanical Watches;
+
+- 3 cluster for Quartz Watches;
+
+- 5 cluster for Smartwatches. 
+
+Next, we provided a graphical representation of the clusters in order to identify the position of our respondent towards the factors.
+
+#### Mechanical Watches
+
+```{r, echo=FALSE}
+par(mfcol=c(1,3))
+#mechanical watches
+membMW<-cutree(clu.MW,k=3) #vector assigning each respondent the membership to a cluster
+plot(fact.scoresMW[,"Quality"],fact.scoresMW[,"Adaptability"])
+for (i in 1:3){
+points(fact.scoresMW[membMW==i,"Quality"],fact.scoresMW[membMW==i,"Adaptability"],
+       col=i,pch=16)
+}
+legend("bottomleft",legend=c(1,2,3),col=c(1,2,3),pch=16)
+
+plot(fact.scoresMW[,"Reliability"],fact.scoresMW[,"Adaptability"])
+for (i in 1:3){
+points(fact.scoresMW[membMW==i,"Reliability"],fact.scoresMW[membMW==i,"Adaptability"],
+       col=i,pch=16)
+}
+
+plot(fact.scoresMW[,"Quality"],fact.scoresMW[,"Reliability"])
+for (i in 1:3){
+points(fact.scoresMW[membMW==i,"Quality"],fact.scoresMW[membMW==i,"Reliability"],
+       col=i,pch=16)
+}
+```
+Overall, the clustering algorithm has successfully identified three distinct groups of data points based on their values on the three pairs of variables, and the graphical results provide a useful visual representation of the clustering result.
+
+Analyzing the plots we can state that:
+
+- **Cluster 1** values the most adaptability and quality;
+
+- **Cluster 2** values the most reliability and quality;
+
+- **Cluster 3** values all three factors.
+
+#### Quartz watches
+
+```{r}
+#quartz watches
+membQW<-cutree(clu.QW,k=3) #vector assigning each respondent the membership to a cluster
+plot(fact.scoresQW[,"Performance"],fact.scoresQW[,"Craftsmanship"])
+for (i in 1:3){
+points(fact.scoresQW[membQW==i,"Performance"],fact.scoresQW[membQW==i,"Craftsmanship"],
+       col=i,pch=16)
+}
+legend("bottomleft",legend=c(1,2,3),col=c(1,2,3),pch=16)
+
+```
+
+According to the graph:
+
+- People belonging to **Cluster 1** place a higher value on performance;
+
+- People in **Cluster 2** place a higher value on craftsmanship;
+
+- People belonging to **Cluster 3** value both performance and craftsmanship.
+
+#### Smartwatches
+
+```{r}
+par(mfcol=c(1,3))
+
+#smartwatches
+membSW<-cutree(clu.SW,k=5) #vector assigning each respondent the membership to a cluster
+plot(fact.scoresSW[,"Usability"],fact.scoresSW[,"Craftsmanship"])
+for (i in 1:5){
+points(fact.scoresSW[membSW==i,"Usability"],fact.scoresSW[membSW==i,"Craftsmanship"],
+       col=i,pch=16)
+}
+legend("bottomleft",legend=c(1,2,3,4,5),col=c(1,2,3,4,5),pch=16)
+
+plot(fact.scoresSW[,"Usability"],fact.scoresSW[,"Value"])
+for (i in 1:5){
+points(fact.scoresSW[membSW==i,"Usability"],fact.scoresSW[membSW==i,"Value"],
+       col=i,pch=16)
+}
+
+plot(fact.scoresSW[,"Craftsmanship"],fact.scoresSW[,"Value"])
+for (i in 1:5){
+points(fact.scoresSW[membSW==i,"Craftsmanship"],fact.scoresSW[membSW==i,"Value"],
+       col=i,pch=16)
+}
+```
+
+From the plots we can ifer that:
+
+- **Cluster 1** seems to value just craftsmanship;
+
+- **Cluster 2** rates highly usability and value;
+
+- **Cluster 3** rates highly all of the three factors;
+
+- **Cluster 4** rates highly usability and craftsmanship;
+
+- **Cluster 5** doesn't value none of them. 
+
+Then, we plot them in a 3D graph to get a more complete picture of the clusters' positions in relation to the clustering factors.
+```{r fig.height=5, fig.width=5}
+#importing the lattice library to plot a 3D plot
+library(lattice)
+
+#mechanical watch
+cloud(fact.scoresMW[,3]~fact.scoresMW[,1]+fact.scoresMW[,2],groups=membMW,
+      scales=list(arrows=F), screen=list(z=30,x=-60), xlab="Quality",ylab="Adaptability",
+      zlab="Reliability", auto.key=T, pch=16,main="Mechanical Watch")
+
+#smartwatch
+cloud(fact.scoresSW[,3]~fact.scoresSW[,1]+fact.scoresSW[,2],groups=membSW,
+      scales=list(arrows=F), screen=list(z=35,x=-65), xlab="Usability",ylab="Craftsmanship",
+      zlab="Value", auto.key=T, pch=16, main="Smartwatch")
+
+
+```
+
+We proceed to the cluster naming and profiling, according to the factors used in defining the clusters.
+
+## Cluster naming and profiling
+
+First, we need to build a demographics dataset.
+```{r, echo=FALSE}
+#creating a dataset including all the demographic variables we need
+demo <-watches[,c(92,97,98,99,100,101)]
+#we remove respondent that had NAs for each demographic variable
+demo <- demo[rowSums(is.na(demo)) != ncol(demo), ]
+
+#substituting the years written in 2 digit format in a 4 year format 
+for (i in 1:nrow(demo)){
+  if (demo$Year_born[i]<1000){
+    demo$Year_born[i]<-demo$Year_born[i]+1900
+  }
+}
+# dividing our respondent in generation instead of keeping the years of birth
+
+for (i in 1:nrow(demo)){
+  if (demo$Year_born[i]>=1945 & demo$Year_born[i]<1965){
+    demo$Year_born[i]<-"Boomers"
+  } else if (demo$Year_born[i]>= 1965 & demo$Year_born[i]<1981){
+    demo$Year_born[i]<-"GenX"
+  } else if (demo$Year_born[i]>=1981 & demo$Year_born[i]<1997){
+    demo$Year_born[i]<-"Millenials"
+  } else if (demo$Year_born[i]>= 1997 & demo$Year_born[i]<2012){
+    demo$Year_born[i]<-"GenZ"
+  } else {
+    demo$Year_born[i]<-"Other" #only for safety even if all our respondent will fall inside the above gen
+  }
+}
+#changing the name of coded variable
+
+#gender we know 1 is male
+demo[,4]<-ifelse(demo[,4]==1,'male','female')
+
+#for job 
+demo$Job[demo$Job==0] <- 'Unemployed'
+demo$Job[demo$Job==1] <- 'Student'
+demo$Job[demo$Job==2] <- 'Self employed'
+demo$Job[demo$Job==3] <- 'Employee'
+demo$Job[demo$Job==4] <- 'Retired'
+demo$Job[demo$Job==5] <- 'Other'
+
+#education
+demo$Education[demo$Education==0] <- 'middle school'
+demo$Education[demo$Education==1] <- 'high school'
+demo$Education[demo$Education==2] <- 'Bachelor Degree'
+demo$Education[demo$Education==3] <- 'Master degree'
+demo$Education[demo$Education==4] <- 'Other '
+
+# income
+demo$Income[demo$Income==0]<-'0-15,000'
+demo$Income[demo$Income==1]<-'15,000-28,000'
+demo$Income[demo$Income==2]<-'28,000-55,000'
+demo$Income[demo$Income==3]<-'55,000-75,000'
+demo$Income[demo$Income==4]<-'> 75,000'
+
+#size of the city
+demo$large_city[demo$large_city==0]<-'Small'
+demo$large_city[demo$large_city==1]<-'Medium'
+demo$large_city[demo$large_city==2]<-'Large'
+
+#omitting last NAs in the dataset
+demo<- na.omit(demo)
+```
+
+Next, We calculated the centroids of the clusters.
+```{r, echo=FALSE}
+library(plyr, warn.conflicts = FALSE)
+#mechanical watches
+clu.scoresMW <- matrix(NA, 3, 4)
+rownames(clu.scoresMW)<-c("clu1", "clu2", "clu3")
+for (i in 1:3) {
+  for(j in 1:3){
+    clu.scoresMW[i,j]<-round(mean(fact.scoresMW[membMW==i,j]),3)
+  }  
+  clu.scoresMW[i,4]<-count(membMW==i)[2,2]
+}
+colnames(clu.scoresMW)<-c("Quality", "adaptability", "reliability", "size")
+
+clu.scoresMW
+
+#quartz watches
+clu.scoresQW <- matrix(NA, 3, 3)
+rownames(clu.scoresQW)<-c("clu1", "clu2","clu3")
+for (i in 1:3) {
+  for(j in 1:2){
+    clu.scoresQW[i,j]<-round(mean(fact.scoresQW[membQW==i,j]),3)
+  }  
+  clu.scoresQW[i,3]<-count(membQW==i)[2,2]
+}
+colnames(clu.scoresQW)<-c("Performance", "Craftsmanship","size")
+
+clu.scoresQW
+
+#smartwatches
+clu.scoresSW <- matrix(NA, 5, 4)
+rownames(clu.scoresSW)<-c("clu1", "clu2", "clu3", "clu4", "clu5")
+for (i in 1:5) {
+  for(j in 1:3){
+    clu.scoresSW[i,j]<-round(mean(fact.scoresSW[membSW==i,j]),3)
+  }  
+  clu.scoresSW[i,4]<-count(membSW==i)[2,2]
+}
+colnames(clu.scoresSW)<-c("Usability", "Craftsmanship", "Value", "size")
+
+clu.scoresSW
+```
+
+**Mechanical Watches**
+
+
+- The first cluster’s respondents do not value any of the three factors. We can call them the **indifferent watches buyers**.
+
+- The second cluster does not value the adaptability side when buying a watch, because of the large negative value for the adaptability factor. At the same time they somewhat value the quality and reliability of mechanical watches. We can call them the **meticulous watches buyers**.We selected this name to signal to the TradWatch the aspect on which these customers should be addressed when designing marketing stategies.
+
+ -We can name the third cluster as the **demanding watches buyers**, since they care a lot about the quality, adaptability and reliability when buying a mechanical watch.These customers should be addressed with the best possible product that satisfy their high expectations.
+
+**Quartz Watches**
+
+
+- We can name the first cluster as the **performance watches buyers**, since it is composed of consumers that value the performance value, but does not value the craftsmanship side of watches.
+
+- The second cluster's respondents does not value the performance side of watches, but instead the craftsmanship side. This is why we can call them **craftsmanship watches buyers**.
+
+- We can call the third cluster as the **classic watches buyers**, since it is composed of consumers which agree with positive aspects of watches' attributes with respect to all factors. 
+
+**smartwatches**
+
+
+- The first cluster does not appreciate the usability and value side of watches' attributes, but instead values craftsmanship more. We can call them **connoiseur watches buyers**.
+
+- We can name the second cluster as **pragmatic watches buyers**, since they appreciate more the value and usability of watches' attributes, but these customers don't value the craftsmanship factor.
+
+- We can name the third cluster as **confident watches buyers** , since they positively care about the usability, craftsmanship and value factors of the watches' attributes.
+
+- The fourth cluster does not assign worth on the value side (large negative value), but at the same time they value usability and craftsmanship.We can call them **discerning watches buyers** we need this name to remind the aspect on which these customers should be addressed when designing our policies.
+
+- The fifth cluster does not value any of the factors, which is why we can call them **uninterested consumer**.
+
+
+## Characterization of the clusters
+
+After naming the clusters based on the factors used to construct them, we wanted to show the composition of these clusters using socio-demographic variables. This way the company is able to better profile customers according to their preferred watches attributes.
+```{r,echo=FALSE}
+
+#grouping level of income in just 3 groups
+short.income <- rep(0,nrow(demo))
+short.income[which(demo$Income=="0-15,000")] <-"low income"
+short.income[which(demo$Income=="55,000-75,000"|demo$Income=="> 75,000")]<-"high Income"
+short.income[which(demo$Income=="15,000-28,000"|demo$Income=="28,000-55,000")]<-"middle class"
+
+#selecting respondent that are included in our demographic dataset
+
+t <- rownames(demo)
+
+membMW2 <-rep(0,length(t))
+membQW2 <-rep(0,length(t))
+membSW2 <-rep(0,length(t))
+
+names(membMW2) <- t
+names(membQW2) <- t
+names(membSW2) <- t
+
+for (i in 1: length(t)) {
+  membMW2[[i]]<- membMW[[t[i]]]
+  membQW2[[i]]<- membQW[[t[i]]]
+  membSW2[[i]]<- membQW[[t[i]]]
+}
+
+```
+
+```{r,echo=FALSE, results='hide'}
+#mechanical watches
+resMW<-list(prop.table(table(membMW2,short.income),1)*100,
+          prop.table(table(short.income))*100,
+          prop.table(table(membMW2,demo$Education),1)*100,
+          prop.table(table(demo$Education))*100,
+          prop.table(table(membMW2,demo$Gender),1)*100,
+          prop.table(table(demo$Gender))*100,
+          prop.table(table(membMW2,demo$Job),1)*100,
+          prop.table(table(demo$Job))*100,
+          prop.table(table(membMW2,demo$Year_born),1)*100,
+          prop.table(table(demo$Year_born))*100,
+          prop.table(table(membMW2,demo$large_city),1)*100,
+          prop.table(table(demo$large_city))*100
+          )
+names(resMW)<-c("cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample")
+lapply(resMW, round,2)
+```
+
+```{r, echo=FALSE, results='hide'}
+#quartz watches 
+resQW<-list(prop.table(table(membQW2,short.income),1)*100,
+          prop.table(table(short.income))*100,
+          prop.table(table(membQW2,demo$Education),1)*100,
+          prop.table(table(demo$Education))*100,
+          prop.table(table(membQW2,demo$Gender),1)*100,
+          prop.table(table(demo$Gender))*100,
+          prop.table(table(membQW2,demo$Job),1)*100,
+          prop.table(table(demo$Job))*100,
+          prop.table(table(membQW2,demo$Year_born),1)*100,
+          prop.table(table(demo$Year_born))*100,
+          prop.table(table(membQW2,demo$large_city),1)*100,
+          prop.table(table(demo$large_city))*100
+          )
+names(resQW)<-c("cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample")
+lapply(resQW, round,2)
+```
+
+```{r, echo=FALSE, results='hide'}
+#smartwatch
+resSW<-list(prop.table(table(membSW2,short.income),1)*100,
+          prop.table(table(short.income))*100,
+          prop.table(table(membSW2,demo$Education),1)*100,
+          prop.table(table(demo$Education))*100,
+          prop.table(table(membSW2,demo$Gender),1)*100,
+          prop.table(table(demo$Gender))*100,
+          prop.table(table(membSW2,demo$Job),1)*100,
+          prop.table(table(demo$Job))*100,
+          prop.table(table(membSW2,demo$Year_born),1)*100,
+          prop.table(table(demo$Year_born))*100,
+          prop.table(table(membSW2,demo$large_city),1)*100,
+          prop.table(table(demo$large_city))*100
+          )
+names(resSW)<-c("cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample","cluster","sample")
+lapply(resQW, round,2)
+```
+
+## Conclusion cluster analysis
+
+After conducting the cluster analysis, we can affirm that we can segment the market according to characteristic factors. The cluster analysis that we develop may help TradWatch to create different groups of customers combined by similar preferences on watches' attributes. We were also able to give the company a clearer picture of the composition of these distinct clusters because we used socio-demographic factors to characterize the cluster. It allows the company to develop tailored marketing strategies to target their desired customers. 
+
+
+# Qustion 4: Owners of different type of watches are different also in terms of their socio-demographic characteristics?
+
+To answer this question we decided to plot two sets of histograms: 
+
+- the first, represent individuals who own only traditional watches (blue histograms);
+
+- the second, represent individuals who own both kinds of watches (red histograms).
+
+We had to compare traditional owners with owners of both types of watches becasue no respondent in our datasets owned only smartwatches.
+
+```{r, echo=FALSE, fig.height=10, fig.width=10}
+ID2<-c(1:nrow(demo))
+demo <- data.frame(ID= ID2, demo[,])
+
+owners <-watches[,c(1,2,3)]
+ID <- rownames(demo)
+owners2 <- owners[ID,]
+#rownames(owners2) <- c(1:nrow(owners2))
+owners2 <- data.frame(ID= ID2, owners2[,])
+#now we merge the two datasets
+
+merged_data <- merge(owners2, demo, by="ID")
+
+colnames(merged_data)[2:4] <- c("MW.owner", "QW.owner", "SW.owner")
+
+merged_data$MW.owner <- ifelse(merged_data$MW.owner>0, 'Yes', 'No')
+merged_data$QW.owner <- ifelse(merged_data$QW.owner>0, 'Yes', 'No')
+merged_data$SW.owner <- ifelse(merged_data$SW.owner>0, 'Yes', 'No')
+#create a vector to fill 
+own <- rep(0,dim(owners2)[1])
+for (i in 1:nrow(merged_data)) {
+  if (merged_data$MW.owner[i] =="Yes" & merged_data$QW.owner[i] =="Yes" & merged_data$SW.owner[i] == "No") {
+    own[i] <- "Traditional"
+  } else if (merged_data$MW.owner[i] =="No" & merged_data$QW.owner[i] =="No" & merged_data$SW.owner[i] == "Yes") {
+    own[i] <- "Smartwatch"
+  } else if (merged_data$MW.owner[i] =="Yes" & merged_data$QW.owner[i] =="Yes" & merged_data$SW.owner[i] == "Yes"){
+    own[i] <- "all"
+  } else if (merged_data$MW.owner[i] == "Yes" & merged_data$QW.owner[i] == "No" & merged_data$SW.owner[i] == "No"){
+    own[i] <- "Mechanical"
+  } else if (merged_data$MW.owner[i] =="No" & merged_data$QW.owner[i] == "Yes" & merged_data$SW.owner[i] == "No"){
+    own[i] <- "Quartz"
+  } else if(merged_data$MW.owner[i] =="Yes" | merged_data$QW.owner[i] == "Yes" & merged_data$SW.owner[i] == "Yes"){
+    own[i] <- "Both"
+  } else {
+  own[i] <- "None"
+}
+}
+
+final <- data.frame(merged_data[,1],Ownership = own,merged_data[,5:10])
+
+
+#we divide our dataset based on the ownership of the responded 
+
+traditional <- subset(final, Ownership == "Traditional" | Ownership =="Quartz" | Ownership == "Mechanical") #quartz and mechanical
+
+Smartwatch <- subset(final, Ownership == "Smartwatch") #smartwatch only
+
+Experimenter <- subset(final, Ownership == "Both" | Ownership == "all") #all three types
+
+#plotting to compare the demographic characteristics of owners of traditional watches and owner of both types.
+par(mfrow=c(2:3))
+
+#traditional
+for (i in 1:6){
+  fre<-table(traditional[,i+2])
+  fre.p <- round(fre/dim(traditional)[1]*100,1)
+  bp <- barplot(fre.p,ylim=c(0,105),main=colnames(traditional)[i+2], col="lightblue", las=2, cex.names = 0.8)
+ text(bp, fre.p, labels= paste(fre.p,"%"), pos=3)
+}
+#both types owners
+for (i in 1:6){
+  fre <-table(Experimenter[,i+2])
+  fre.p <- round(fre/dim(Experimenter)[1]*100,1)
+  bp <- barplot(fre.p,ylim=c(0,105),main=colnames(Experimenter)[i+2], col="Red", las=2, cex.names = 0.8)
+  text(bp, fre.p, labels= paste(fre.p,"%"), pos=3)
+}
+
+```
+
+Comparing the two blocks of histogram, we can see that:
+
+The first thing we noticed is that there is not a significant difference between the age of the owners of these two groups. We can see that the two major groups of owners are the Millennials and GenX, in accordance with our secondary research. The owners' education is another area where there aren't any discernible distinctions between the two groups.
+Another interesting finding is related to the location of the watches’ owners. 
+On one hand, who owns both types of watches tend to live in large cities (with more than 200,000 inhabitants). On the other hand, traditional watches users are more likely to live in small cities (with less than 50,000 inhabitants). 
+
+
+Regarding the income, the data shows a small difference between the two groups. People who own both types of watches are more likely to have higher incomes (over $75,000), while traditional watches users have a more equal distribution across income levels. We need to specify that our observed data for traditional watches are slightly different than in our secondary research, what changes was income, which is smaller in our observed data.
+
+
+The gender of owners also does not significantly differ among the two watches categories, unless smartwatches have just a slightly larger share of female owners. We notice that male is the prominent gender in our observed sample, which is coherent with our secondary research as well. The biggest difference between the two group of owners is found in the job factor. 
+We found that retired people do not possess both types of watches, while people in other professions share a comparable distribution with the traditional owners.
+In conclusion, our data demonstrates how there is little difference between people who solely own traditional watches and people who possess both kinds. 
+Even if we believe these findings are relevant for TradWatch, we are unable to draw a definitive conclusion on the differences in socio-demographic traits because we were unable to compare owners of traditional watches with owners of smartwatches.
+
+
+# Qusetion 7: Do characteristics and perception of watches affect the willingness to buy of customers?
+
+```{r}
+#creating a dataset with the willingness to buy responses for the three type of watches
+wtb <- na.omit(watches[,102:104])
+#renaming the column to increase clarity
+colnames(wtb) <- c("wtb.MW","wtb.QW","wtb.SW")
+
+
+```
+
+To answer this question we will use factors on the charactestics that we already developed. Moreover, we decided to develop the factors for the perception of watches (Question 4)
+
+**Factor analysis for the perception variables**
+
+We start by evaluating if there is any correlation worth exploring among the variable
+
+```{r}
+#import library psych to measure the KMO index and perform the Barlett test of sphericity
+library(psych)
+
+#mechanical wathces
+KMO(per.MW)
+cortest.bartlett(per.MW)
+
+# quartz watches
+KMO(per.QW)
+cortest.bartlett(per.QW)
+
+# smartwatches
+KMO(per.SW)
+cortest.bartlett(per.SW)
+```
+
+It seems it is worthwile to proceed witht the factorial analysis because the variables are correlated, they share common variability since:
+
+- Mecahnical watches are ok : MSA: 0.86, p-value:5.548378e-134
+
+- Quatz watches are ok :  MSA: 0.82, p-value: 6.764467e-129
+
+- Smartwatches are ok:  MSA: 0.81, p-value:6.365062e-104
+
+
+```{r, echo=FALSE, results='hide'}
+#importing the library dplyr used for: select()
+library(dplyr)
+
+#mechanical watch
+anfatt2.MW<-factanal(per.MW,5,rotation="varimax", scores="regression")
+anfatt2.MW
+#we remove the superfluous column because of the high uniqueness 
+per2.MW <- select(per.MW, -7)
+
+anfatt2.MW<-factanal(per2.MW,5,rotation="varimax", scores="regression")
+anfatt2.MW
+
+#plotting the scree plot
+plot(seq(1:5),colSums(anfatt2.MW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for mechanical watches")
+lines(seq(1:5),colSums(anfatt2.MW$loadings^2))
+abline(h=1,lty=2)
+
+
+anfatt2.MW<-factanal(per2.MW,3,rotation="varimax", scores="regression") 
+anfatt2.MW
+
+#Quartz watch
+
+anfatt2.QW<-factanal(per.QW,6,rotation="varimax", scores="regression")
+anfatt2.QW
+
+#plotting the scree plot
+plot(seq(1:6),colSums(anfatt2.QW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for quartz watches")
+lines(seq(1:6),colSums(anfatt2.QW$loadings^2))
+abline(h=1,lty=2)
+
+
+anfatt2.QW<-factanal(per.QW,5,rotation="varimax", scores="regression") 
+anfatt2.QW
+
+#we remove the superfluous column because of the high uniqueness 
+per2.QW <- select(per.QW, -7)
+
+anfatt2.QW<-factanal(per2.QW,4,rotation="varimax", scores="regression") 
+anfatt2.QW
+
+#smart watch
+
+anfatt2.SW<-factanal(per.SW,6,rotation="varimax", scores="regression")
+anfatt2.SW
+#plotting the scree plot
+plot(seq(1:6),colSums(anfatt2.SW$loadings^2), xlab="Number of factors", ylab="Variance explained by each factor", main = "Scree plot for smart watches")
+lines(seq(1:6),colSums(anfatt2.SW$loadings^2))
+abline(h=1,lty=2)
+
+anfatt2.SW<-factanal(per.SW,4,rotation="varimax", scores="regression")
+anfatt2.SW
+
+#we remove the superfluous column because of the high uniqueness 
+per2.SW <- select(per.SW, -7)
+
+anfatt2.SW<-factanal(per2.SW,4,rotation="varimax", scores="regression")
+anfatt2.SW
+```
+
+
+```{r, echo=FALSE}
+anfatt2.MW
+anfatt2.QW
+anfatt2.SW
+```
+
+#### Naming factors
+
+**Mechanical watches**
+
+- Factor 1: **Elegancy** = classy+ status+ sophisticated+ evergreen+ desire
+
+- Factor 2: **Enjoyable** = gratifying + exciting
+
+- Factor 3: **Sparky** = fun+ sporty+ trendy
+
+**Quartz watches**
+
+- Factor1: **Fancy** = Classy+ status+ sophisticated+ trendy+ desire
+
+- Factor2: **Enjoyable** = gratifying + exciting 
+
+- Factor3: **Playful** = fun+ sporty
+
+- Factor4: **Evergreen** = evergreen
+
+**Smartwatches**
+
+- Factor1: **Glamour** = Status+ sophisticated+fun+trendy+sporty
+
+- Factor2: **Timeless**= evergreen+classy
+
+- Factor3: **Enjoyable**= gratifying + exciting 
+
+- Factor4: **Deside**= desire
+
+```{r, echo=FALSE}
+#naming the factors
+
+#mechnical watch
+fact.scores2MW<-anfatt2.MW$scores
+colnames(fact.scores2MW)<-c("Elegancy","Enjoyable", "Sparky")
+#cor(fact.scores2MW)
+
+#quartz watch
+fact.scores2QW<-anfatt2.QW$scores
+colnames(fact.scores2QW)<-c("Fancy","Enjoyable", "Playful", "Evergreen")
+#cor(fact.scores2QW)
+
+#smart watch
+fact.scores2SW<-anfatt2.SW$scores
+colnames(fact.scores2SW)<-c("Glamour","Timeless", "Enjoyable", "Desire")
+#cor(fact.scores2SW)
+```
+
+#Logistic Regression 
+
+#### Mechanical Watches
+
+```{r,echo=FALSE}
+#selecting the respondend in our willingness to pay dataset to have the same length 
+fact.scoMW <- fact.scoresMW[rownames(wtb),]
+fact.sco2MW <- fact.scores2MW[rownames(wtb),]
+
+#to have a clearer interpretation we assign each factor scores to its own variable
+quality <- fact.scoMW[,1]
+adaptability<- fact.scoMW[,2]
+reliability<- fact.scoMW[,3]
+elegancy <- fact.sco2MW[,1]
+enjoyable<- fact.sco2MW[,2]
+stylish <- fact.sco2MW[,3]
+
+#selecting willingness to buy for mechanical watches
+wtbMW <-wtb[,"wtb.MW"]
+#comnining the dependent variable and other regressors in a signle dataset
+testdata <- data.frame(wtbMW, quality, adaptability, reliability, elegancy, enjoyable, stylish)
+```
+
+```{r}
+modelMW <- glm(wtbMW~.,data=testdata, family = binomial(link="logit"))
+summary(modelMW)
+```
+
+For mechanical watches, we can see that the relevant variables pushing people to buy a mechanical watch are the enjoyable factor and the elegancy factor, which are both from related to the perception.
+
+
+We move to the exponential transform to better understand the effects of these factors on the willingness to buy
+
+```{r}
+#find the odds-ratios
+#mechanical watches
+round(exp(modelMW$coefficients),3)
+```
+
+-One point more in the scale of the **enjoyable factor** leads to an increase of **193.2%** $((2.932-1)\times100)$ in the odds of a customer buying a mechanical watch.
+
+- One point more in the scale of the **elegancy** factor leads to an increase of **93.8%**$((1.938-1)\times100)$ in the odds of a customer buying a mechanical watch.
+
+
+To validate our model we test for the null of the regressors bringing something more with respect to the null model.
+```{r}
+#building the null model
+#mechanical watches
+nullmodelMW <- glm(wtbMW~1, data = testdata, family = binomial(link = "logit"))
+
+# likelihood ratio test
+print(paste("model MW likelihood ratio test p-value:", round(with(modelMW, pchisq(null.deviance-deviance,df.null-df.residual, lower.tail = F)),6)))
+```
+
+Since the p-value is significantly smaller than 0.05, we reject the null hypothesis, meaning that our model "modelMW"  with regressors is useful in explaining the dependent variable (willingness to buy MW).
+
+#### Quartz watches
+
+We follow the same precedure for quartz watches.
+```{r, echo=FALSE}
+# quartz watch
+fact.scoQW <- fact.scoresQW[rownames(wtb),]
+fact.sco2QW <- fact.scores2QW[rownames(wtb),]
+
+performance <- fact.scoQW[,1]
+craftsmanship <- fact.scoQW[,2]
+fancy<- fact.sco2QW[,1]
+enjoyable <- fact.sco2QW[,2]
+playful<- fact.sco2QW[,3]
+evergreen <- fact.sco2QW[,4]
+
+
+wtbQW <-wtb[,"wtb.QW"]
+
+testdata <- data.frame(wtbQW, performance, craftsmanship, fancy, enjoyable, playful, evergreen)
+```
+
+```{r}
+modelQW <- glm(wtbQW~.,data=testdata, family = binomial(link="logit"))
+summary(modelQW)
+```
+
+For quartz watches, we can see that the relevant variables pushing people to buy a quartz watch are the performance factor, the fancy factor, and the enjoyable factor. We notice that the relevant variables affecting the willingness to buy quartz watches are similar to mechanical watches, highlighting the belonging to the same traditional watches category.
+
+We move to the exponential transform to better understand the effects of these factors on the willingness to buy
+
+```{r}
+#find the odds-ratios
+#quartz watches
+round(exp(modelQW$coefficients),3)
+```
+
+- One point more in the scale of the **performance factor** leads to a increase of **114.7%** $((2.147-1)\times100)$ in the odds of a customer buying a quartz watch.
+
+- One point more in the scale of the **fancy factor** leads to an increase of **61.2%**$((1.612-1)\times100)$ in the odds of a customer buying a quartz watch.
+
+- One point more in the scale of the **enjoyable factor** leads to an increase of **83.6%**$((1.836-1)\times100)$ in the odds of a customer buying a quartz watch.
+
+
+To validate our model we test for the null of the regressors bringing something more with respect to the null model.
+```{r}
+#building the null model
+#mechanical watches
+nullmodelQW <- glm(wtbQW~1, data = testdata, family = binomial(link = "logit"))
+
+# likelihood ratio test
+print(paste("model QW likelihood ratio test p-value:", round(with(modelQW, pchisq(null.deviance-deviance,df.null-df.residual, lower.tail = F)),9)))
+```
+
+Since the p-value is significantly smaller than 0.05, we reject the null hypothesis, meaning that our model "modelQW"  with regressors is useful in explaining the dependent variable (willingness to buy QW).
+
+#### Smart watch
+
+```{r, echo=FALSE}
+#smartwatch
+fact.scoSW <- fact.scoresSW[rownames(wtb),]
+fact.sco2SW <- fact.scores2SW[rownames(wtb),]
+
+
+usability <- fact.scoSW[,1]
+craftsmanship<- fact.scoSW[,2]
+value<- fact.scoSW[,3]
+glamour <- fact.sco2SW[,1]
+timeless<- fact.sco2SW[,2]
+enjoyable <- fact.sco2SW[,3]
+desire <- fact.sco2SW[,4]
+
+
+wtbSW <-wtb[,"wtb.SW"]
+
+testdata <- data.frame(wtbSW, usability, craftsmanship, value, glamour,  timeless, enjoyable, desire)
+```
+
+```{r}
+modelSW <- glm(wtbSW~.,data=testdata, family = binomial(link="logit"))
+summary(modelSW)
+```
+For smart watches, we can see that the relevant variables pushing people to buy a smartwatch are the performance value and the desire factor. 
+
+We move to the exponential transform to better understand the effects of these factors on the willingness to buy.
+```{r}
+#find the odds-ratios
+#smartwatches
+round(exp(modelSW$coefficients),3)
+```
+
+- One point more in the scale of the **value factor** leads to a increase of **87.6%** $((1.876-1)\times100)$ in the odds of a customer buying a smartwatch.
+
+- One point more in the scale of the **desire factor** leads to an increase of **72.1%**$((1.721-1)\times100)$ in the odds of a customer buying a smartwatch.
+
+
+To validate our model we test for the null of the regressors bringing something more with respect to the null model.
+```{r}
+#building the null model
+#smartwatch
+nullmodelSW <- glm(wtbSW~1, data = testdata, family = binomial(link = "logit"))
+
+print(paste("model 1 likelihood ratio test p-value:", round(with(modelSW, pchisq(null.deviance-deviance,df.null-df.residual, lower.tail = F)),6)))
+```
+
+Since the p-value is significantly smaller than 0.05, we reject the null hypothesis, meaning that our model "modelSW"  with regressors is useful in explaining the dependent variable (willingness to buy SW).
+
+##Conclusion logic regression
+
+From our analysis, we discovered that both perception and characteristic have an impact on the willingness to buy different types of watches. In particular, we noticed that perception factors were more relevant than characteristics. Furthermore, we noticed that this analysis further validated the intrinsic connection between mechanical and quartz watches. In fact, the willingness to buy of the two traditional watches are affected by similar factors (e.g., perception variables such as: classy, sophisticated, exciting). However,we want to underline a difference between the two traditional watches: only the willingness to buy quartz watches is affected by some characteristics variable included in the performance factors (e.g., design, reliability). 
+
+Regarding smartwatches we found that the willing to buy is influence mainly by value and desire factors. This signal the different value and lifestyle of smartwatches and traditional buyers. Our final analysis provides interesting opportunities for TradWatches to understand better customer focus its resources to reach the customers they are more interested in.
+
+
+# FINDING OF OUR ANALYSIS
+
+* We found that in general design and brand are those attributes that have a positive impact on the perception of customers on both categories of watches (traditional, smartwatches). Specifically, functionality, design and brand impact the most on the perception of traditional watches; while, desing and brand have the major impact on the perception of smartwatches. 
+
+* Thanks to our heatmaps, we observed that the highest ranked variables among all the three types of watches (mechanical, quartz, smartwatch) is the reliability. However, reliability has no significan impact on the perception of customers. 
+
+* We can conclude that the characteristics of the watches can be reduced to common factors. This may allow the company to conduct a survey with easier and quicker answers. Moreover, reducing variables to common factors could allow marketing team to in-depth analyze the correlation between some variables. 
+
+* We notice some differences in terms of socio-demographic characteristics:
+    + Significant difference between the age of the owners of these two groups (the two major groups of owners are the Millennials and GenX, in accordance with our secondary research)
+    + People who owns both types of watches tend to live in large cities (< 200,000 inhabitants). Whereas, traditional watches users are more likely to live in small cities (> 50,000          inhabitants).
+    + People who own both types of watches are more likely to have higher incomes (over $75,000), whereas traditional watches users have a more equal distribution across income levels.
+    + The gender of owners also does not significantly differs between the two watches types, with smartwatches having just a slightly larger share of female owners. 
+    + The biggest difference can be found in job factor. Retired people seems to not owns both types of watches.
+    
+* We identified 11 different clusters of customers who appreciate different types of watches' characteristics. Moreover, we used socio-demographic variables to characterized these 11 clusters in order to allow a deeper segmentation of the market. 
+
+* From our analysis, we discovered that both perception and characteristic have an impact on the willingness to buy different types of watches. In particular, we noticed that perception factors were more relevant than characteristics. Furthermore, we noticed that this analysis further validated the intrinsic connection between mechanical and quartz watches. In fact, the willingness to buy of the two traditional watches are affected by similar factors (e.g., perception variables such as: classy, sophisticated, exciting). However, we want to underline a difference between traditional watches: only the willingness to buy quartz watches is affected by some characteristic’s variable included in the performance factors (e.g., design, reliability). Regarding smartwatches we found that the willing to buy is influence mainly by value and desire factors. This signal the different value and lifestyle of smartwatches and traditional buyers.
+
+
+
