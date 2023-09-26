@@ -15,3 +15,10 @@ Anotehr question I have tried to answer is if characterisJcs and percepJon of wa
 
 ## Sampling Description
 The group was gathered from the members of a watch forum. The survey was administered online and collected 237 responses. The questionnaire was composed of 16 questions, mainly divided into a first section about watches characteristics, a second section about socio-demographic characteristics, a question about how respondents came in possession of their watches, and questions about willingness to buy, to account for any remaining market share.
+
+# Files Description
+* Watches questionaire.pdf: includes the pdf of the questionaire that was provided to the sample;
+* Watches.txt: is a text file with the complete datasets;
+* Watches.xlsx: is an excel file with the complete datasets and the lables for the coded variables;
+* Watches_Case Study_Code.Rmd is the RMarkdown file of the report;
+* Watches_Case_Study_Report.pdf is the final report knitted from RStudio.
